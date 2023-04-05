@@ -7,7 +7,7 @@
 #define READ 0
 #define WRITE 1
 #define FILES_PER_SLAVE 2
-
+#define SLAVES_FROM_FILES(cant_files) (int((cant_files) / 20) + 1)
 
 typedef struct slave_info {
     int app_to_slave[2]; // File descriptors connecting app to slave
@@ -34,7 +34,7 @@ int main (int argc, char * argv[]) {
     }
 
     // +1 because you need at least 1 slave
-    int number_slaves = cant_files / FILES_PER_SLAVE + 1;
+    int number_slaves = SLAVES_FROM_FILES(cant_files);
 
     slave_info slaves[number_slaves];
 
