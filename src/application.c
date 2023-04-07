@@ -1,3 +1,5 @@
+#include "include/manager.h"
+
 #include <stdio.h>
 #include <sys/types.h>
 #include <unistd.h>
@@ -6,8 +8,8 @@
 
 #define READ 0
 #define WRITE 1
-#define FILES_PER_SLAVE 2
-#define SLAVES_FROM_FILES(cant_files) (int((cant_files) / 20) + 1)
+#define FILES_PER_SLAVE 5
+#define SLAVES_FROM_FILES(cant_files) (cant_files / FILES_PER_SLAVE + 1)
 
 typedef struct slave_info {
     int app_to_slave[2]; // File descriptors connecting app to slave
@@ -15,13 +17,14 @@ typedef struct slave_info {
     int pid; // Slave's pid (pid_t or int?)
 } slave_info;
 
+void create_output_file(char * file_name, char * mode);
+
 int main (int argc, char * argv[]) {
     int cant_files = 0;
     char * files[argc];
 
     // i initial value = 1 because first argument = path
     for (int i = 1; i < argc; i++) {
-        // TO-DO: is_file function
         // is_file returns 1 if parameter is a regular file
         if (is_file(argv[i])) {
             files[cant_files++] = argv[i];
@@ -30,7 +33,7 @@ int main (int argc, char * argv[]) {
 
     if (argc <= 1 || cant_files == 0){
         perror("No files found");
-        exit(1); // TO-DO: error codes
+        exit(NO_FILES_FOUND); 
     }
 
     // +1 because you need at least 1 slave
@@ -38,34 +41,24 @@ int main (int argc, char * argv[]) {
 
     slave_info slaves[number_slaves];
 
-    // Creating output file
-    FILE * output = fopen("respuesta.txt", "w");
-    if (output == NULL) {
-        perror("Error creating output file");
-        exit(1); // Error codes
-    }
-
+    FILE * output = create_output_file("respuesta.txt", "w");
+    
     // Creating pipes between master and slave
     
-    fd_set fd_read_set;
+    fd_set fd_read_set, fd_backup_read_set;
 
     // Initializes the set on NULL
     FD_ZERO(&fd_read_set);
 
     for (int i = 0; i < number_slaves; i++) {
-        // TO-DO: create_pipe function
-        if (pipe(slaves[i].app_to_slave) == -1) {
-            perror("Error creating pipe");
-            exit(1); // Error codes
-        }
-        if (pipe(slaves[i].slave_to_app) == -1) {
-            perror("Error creating pipe");
-            exit(1); // Error codes
-        }
+        create_pipe(slaves[i].app_to_slave);
+        create_pipe(slaves[i].slave_to_app);
 
         // Includes fd in fd_set (we add all read fd to the set)
         FD_SET(slaves[i].slave_to_app[READ], &fd_read_set);
     }
+
+    fd_backup_read_set = fd_read_set;
 
     // Creating shared memory and semaphores 
     // TO-DO: shared memory and semaphore functions
@@ -75,3 +68,4 @@ int main (int argc, char * argv[]) {
     // ...
     return 0;
 }
+
