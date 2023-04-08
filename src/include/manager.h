@@ -5,6 +5,9 @@
 #include <sys/types.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <unistd.h>
+#include <fcntl.h>           /* For O_* constants */
+#include <sys/stat.h>        /* For mode constants */
 
 
 /* -----  FILE DESCRIPTOR FUNCTIONS  ----- */
@@ -99,6 +102,7 @@ uint32_t is_file (uint8_t * path);
 void close_file (FILE * file);
 
 /* -----  SHARED MEMORY FUNCTIONS  ----- */
+
 typedef struct shm_info {
     uint8_t * name;
     uint32_t fd;
@@ -182,4 +186,94 @@ void close_shm (shm_info * shm);
 */
 void unlink_shm (shm_info * shm);
 
+/* ----- SEMAPHORE FUNCTIONS ----- */
+
+typedef struct sem_info { 
+    uint8_t * name;
+    void * addr;
+} sem_info;
+
+/*
+    create_sem
+    -------------------------------------
+    Description: Creates a semaphore in decreased state
+    ** EXITS IF ERROR **
+    -------------------------------------
+    Parameters:
+        sem: Pointer to the semaphore structure
+    -------------------------------------
+    Returns:
+        void
+*/
+void create_sem (sem_info * sem);
+
+/*
+    open_sem
+    -------------------------------------
+    Description: Creates a semaphore in decreased state (0)
+    ** EXITS IF ERROR **
+    -------------------------------------
+    Parameters:
+        sem: Pointer to the semaphore structure
+    -------------------------------------
+    Returns:
+        void
+*/
+void open_sem (sem_info * sem);
+
+/*
+    post_sem
+    -------------------------------------
+    Description: Increments semaphore value
+    ** EXITS IF ERROR **
+    -------------------------------------
+    Parameters:
+        sem: Pointer to the semaphore structure
+    -------------------------------------
+    Returns:
+        void
+*/
+void post_sem (sem_info * sem);
+
+/*
+    wait_sem
+    -------------------------------------
+    Description: Decrements semaphore value
+    ** EXITS IF ERROR **
+    -------------------------------------
+    Parameters:
+        sem: Pointer to the semaphore structure
+    -------------------------------------
+    Returns:
+        void
+*/
+void wait_sem (sem_info * sem);
+
+/*
+    close_sem
+    -------------------------------------
+    Description: Closes semaphore
+    ** EXITS IF ERROR **
+    -------------------------------------
+    Parameters:
+        sem: Pointer to the semaphore structure
+    -------------------------------------
+    Returns:
+        void
+*/
+void close_sem (sem_info * sem)
+
+/*
+    unlink_sem
+    -------------------------------------
+    Description: Destoys semaphore once it is closed in all processes usiing it.
+    ** EXITS IF ERROR **
+    -------------------------------------
+    Parameters:
+        sem: Pointer to the semaphore structure
+    -------------------------------------
+    Returns:
+        void
+*/
+void unlink_sem (sem_info * sem);
 #endif

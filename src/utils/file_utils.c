@@ -1,7 +1,5 @@
 #include "./../include/manager.h"
-#include <sys/stat.h>
 #include <dirent.h>
-#include <stdio.h>
 
 
 FILE * create_file (uint8_t * file_name, uint8_t * mode) {
