@@ -12,19 +12,17 @@
 #define SLAVES_FROM_FILES(cant_files) (cant_files / FILES_PER_SLAVE + 1)
 
 typedef struct slave_info {
-    int app_to_slave[2]; // File descriptors connecting app to slave
-    int slave_to_app[2]; // File descriptors connecting slave to app
-    int pid; // Slave's pid (pid_t or int?)
+    uint32_t app_to_slave[2]; // File descriptors connecting app to slave
+    uint32_t slave_to_app[2]; // File descriptors connecting slave to app
+    uint32_t pid; // Slave's pid (pid_t or int?)
 } slave_info;
 
-void create_output_file(char * file_name, char * mode);
+uint32_t main (uint32_t argc, uint8_t * argv[]) {
+    uint32_t cant_files = 0;
+    uint8_t * files[argc];
 
-int main (int argc, char * argv[]) {
-    int cant_files = 0;
-    char * files[argc];
-
-    // i initial value = 1 because first argument = path
-    for (int i = 1; i < argc; i++) {
+    // i initial value = 1 because first argument is path
+    for (uint32_t i = 1; i < argc; i++) {
         // is_file returns 1 if parameter is a regular file
         if (is_file(argv[i])) {
             files[cant_files++] = argv[i];
@@ -36,12 +34,10 @@ int main (int argc, char * argv[]) {
         exit(NO_FILES_FOUND); 
     }
 
-    // +1 because you need at least 1 slave
-    int number_slaves = SLAVES_FROM_FILES(cant_files);
-
+    uint32_t number_slaves = SLAVES_FROM_FILES(cant_files);
     slave_info slaves[number_slaves];
 
-    FILE * output = create_output_file("respuesta.txt", "w");
+    FILE * output = create_file("respuesta.txt", "w");
     
     // Creating pipes between master and slave
     
@@ -50,7 +46,7 @@ int main (int argc, char * argv[]) {
     // Initializes the set on NULL
     FD_ZERO(&fd_read_set);
 
-    for (int i = 0; i < number_slaves; i++) {
+    for (uint32_t i = 0; i < number_slaves; i++) {
         create_pipe(slaves[i].app_to_slave);
         create_pipe(slaves[i].slave_to_app);
 

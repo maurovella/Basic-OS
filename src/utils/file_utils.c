@@ -4,19 +4,19 @@
 #include <stdio.h>
 
 
-FILE * create_output_file (char * file_name, char * mode) {
+FILE * create_file (uint8_t * file_name, uint8_t * mode) {
     
-    FILE * output = fopen(file_name, mode);
+    FILE * f = fopen(file_name, mode);
     
-    if (output == NULL) {
-        perror("Error creating output file");
+    if (f == NULL) {
+        perror("Error creating file");
         exit(ERR_CREATING_FILE); 
     }
     
-    return output;
+    return f;
 }
 
-uint32_t is_file (char * path) {
+uint32_t is_file (uint8_t * path) {
     struct stat path_stat;
     stat(path, &path_stat);
     return S_ISREG(path_stat.st_mode);
