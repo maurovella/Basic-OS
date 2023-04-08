@@ -1,11 +1,5 @@
 #include "include/manager.h"
 
-#include <stdio.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <stdlib.h>
-#include <sys/wait.h>
-
 #define READ 0
 #define WRITE 1
 #define FILES_PER_SLAVE 5
@@ -14,8 +8,10 @@
 typedef struct slave_info {
     uint32_t app_to_slave[2]; // File descriptors connecting app to slave
     uint32_t slave_to_app[2]; // File descriptors connecting slave to app
-    uint32_t pid; // Slave's pid (pid_t or int?)
+    pid_t pid; // Slave's pid (pid_t or int?)
 } slave_info;
+
+void validate_files(uint32_t argc, uint32_t cant_files);
 
 uint32_t main (uint32_t argc, uint8_t * argv[]) {
     uint32_t cant_files = 0;
@@ -29,10 +25,8 @@ uint32_t main (uint32_t argc, uint8_t * argv[]) {
         }
     }
 
-    if (argc <= 1 || cant_files == 0){
-        perror("No files found.");
-        exit(ERR_NO_FILES_FOUND); 
-    }
+    validate_files(argc, cant_files);
+    
 
     uint32_t number_slaves = SLAVES_FROM_FILES(cant_files);
     slave_info slaves[number_slaves];
@@ -65,3 +59,9 @@ uint32_t main (uint32_t argc, uint8_t * argv[]) {
     return 0;
 }
 
+void validate_files(uint32_t argc, uint32_t cant_files) {
+    if (argc <= 1 || cant_files == 0){
+        perror("No files found.");
+        exit(ERR_NO_FILES_FOUND); 
+    }
+}
