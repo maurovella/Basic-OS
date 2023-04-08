@@ -7,7 +7,8 @@ For this purpose, the OS is split into three processes: application.c, view.c, a
 * The OS is written for the x86 architecture
 * The code is written in "snakeCase Standard"
 * All functions are written in the following format:
-``` returnType functionName (argumentType argumentName) {
+```
+returnType functionName (argumentType argumentName) {
     // code
 } 
 ```
