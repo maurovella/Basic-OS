@@ -30,8 +30,8 @@ uint32_t main (uint32_t argc, uint8_t * argv[]) {
     }
 
     if (argc <= 1 || cant_files == 0){
-        perror("No files found");
-        exit(NO_FILES_FOUND); 
+        perror("No files found.");
+        exit(ERR_NO_FILES_FOUND); 
     }
 
     uint32_t number_slaves = SLAVES_FROM_FILES(cant_files);
