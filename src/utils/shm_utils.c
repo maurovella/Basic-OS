@@ -1,13 +1,6 @@
 #include "./../include/manager.h"
 #include <sys/mman.h>
 
-typedef struct shm_info {
-    uint8_t * name;
-    uint32_t fd;
-    void * addr;
-    size_t size;
-} shm_info;
-
 void create_shm (shm_info * shm) {
     if ((shm->fd = shm_open(shm->name, O_RDWR|O_CREAT, S_IRUSR|S_IWUSR)) == -1) {
         perror("Error creating shared memory.");
@@ -19,7 +12,7 @@ void create_shm (shm_info * shm) {
         exit(ERR_TRUNCATING_SHM);
     }
 
-    if ((shm->addr = mmap(NULL, shm->size, PROT_READ|PROT_WRITE, MAP_SHARED, shm->fd, 0)) == -1) {
+    if ((shm->addr = mmap(NULL, shm->size, PROT_READ|PROT_WRITE, MAP_SHARED, shm->fd, 0)) == (void *) -1) {
         perror("Error mapping shared memory.");
         exit(ERR_MAPPING_SHM);
     }
@@ -31,13 +24,13 @@ void open_shm (shm_info * shm) {
         exit(ERR_OPENING_SHM);
     }
 
-    if ((shm->addr = mmap(NULL, shm->size, PROT_READ, MAP_SHARED, shm->fd, 0)) == -1) {
+    if ((shm->addr = mmap(NULL, shm->size, PROT_READ, MAP_SHARED, shm->fd, 0)) == (void *) -1) {
         perror("Error mapping shared memory.");
         exit(ERR_MAPPING_SHM);
     }
 }
 
-void write_shm (uint32_t fd, void * buf, size_t length, uint32_t pos) {
+void write_shm (int fd, void * buf, size_t length, int pos) {
     if (pwrite(fd, buf, length, length * pos) == -1) {
         perror("Error writing shared memory.");
         exit(ERR_WRITING_SHM);

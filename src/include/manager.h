@@ -1,14 +1,18 @@
 #ifndef _MANAGER_H_
 #define _MANAGER_H_
 
+#define _XOPEN_SOURCE 500
+
 #include "errors.h"
 #include <sys/types.h>
 #include <stdint.h>
 #include <stdio.h>
-#include <unistd.h>
 #include <fcntl.h>           /* For O_* constants */
 #include <sys/stat.h>        /* For mode constants */
 #include <sys/wait.h>
+#include <sys/select.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 
 /* -----  FILE DESCRIPTOR FUNCTIONS  ----- */
@@ -25,7 +29,7 @@
     Returns:
         void
 */
-void close_fd(uint32_t fd);
+void close_fd(int fd);
 
 /*
     create_pipe
@@ -39,7 +43,7 @@ void close_fd(uint32_t fd);
     Returns:
         void
 */
-void create_pipe(uint32_t pipe_fds[2]);
+void create_pipe(int pipe_fds[2]);
 
 /*
     dup_fd
@@ -55,7 +59,7 @@ void create_pipe(uint32_t pipe_fds[2]);
     Returns:
         void
 */
-void dup_fd (uint32_t fd, uint32_t new_fd);
+void dup_fd (int fd, int new_fd);
 
 /* -----  FILE FUNCTIONS  ----- */
 
@@ -72,7 +76,7 @@ void dup_fd (uint32_t fd, uint32_t new_fd);
     Returns:
         FILE pointer to the new file
 */
-FILE * create_file (uint8_t * file_name, uint8_t * mode);
+FILE * create_file (char * file_name, char * mode);
 
 /*
     is_file
@@ -86,7 +90,7 @@ FILE * create_file (uint8_t * file_name, uint8_t * mode);
         1 if path is a regular file
         0 otherwise
 */
-uint32_t is_file (uint8_t * path);
+int is_file (char * path);
 
 /*
     close_file
@@ -105,8 +109,8 @@ void close_file (FILE * file);
 /* -----  SHARED MEMORY FUNCTIONS  ----- */
 
 typedef struct shm_info {
-    uint8_t * name;
-    uint32_t fd;
+    char * name;
+    int fd;
     void * addr;
     size_t size;
 } shm_info;
@@ -157,7 +161,7 @@ void open_shm (shm_info * shm);
     Returns:
         void
 */
-void write_shm (uint32_t fd, void * buf, size_t length, uint32_t pos);
+void write_shm (int fd, void * buf, size_t length, int pos);
 
 /*
     close_shm
@@ -190,7 +194,7 @@ void unlink_shm (shm_info * shm);
 /* ----- SEMAPHORE FUNCTIONS ----- */
 
 typedef struct sem_info { 
-    uint8_t * name;
+    char * name;
     void * addr;
 } sem_info;
 
@@ -262,7 +266,7 @@ void wait_sem (sem_info * sem);
     Returns:
         void
 */
-void close_sem (sem_info * sem)
+void close_sem (sem_info * sem);
 
 /*
     unlink_sem

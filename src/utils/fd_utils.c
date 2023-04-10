@@ -1,6 +1,6 @@
 #include "./../include/manager.h"
 
-void close_fd (uint32_t fd) {
+void close_fd (int fd) {
     if (close(fd) == -1) {
         perror("Error closing file descriptor.");
         exit(ERR_CLOSING_FD);
@@ -8,14 +8,14 @@ void close_fd (uint32_t fd) {
 }
 
 
-void create_pipe (uint32_t pipe_fds[2]) {
+void create_pipe (int pipe_fds[2]) {
     if (pipe(pipe_fds) == -1) {
             perror("Error creating pipe.");
             exit(ERR_CREATING_PIPE); 
     }
 }
 
-void dup_fd (uint32_t fd, uint32_t new_fd) {
+void dup_fd (int fd, int new_fd) {
     if (dup2(fd, new_fd) == -1) {
         perror("Error duplicating file descriptor.");
         exit(ERR_DUPLICATING_FD);

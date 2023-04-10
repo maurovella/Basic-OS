@@ -1,6 +1,6 @@
 #include "./../include/manager.h"
 
-FILE * create_file (uint8_t * file_name, uint8_t * mode) {
+FILE * create_file (char * file_name, char * mode) {
     
     FILE * f = fopen(file_name, mode);
     
@@ -12,7 +12,7 @@ FILE * create_file (uint8_t * file_name, uint8_t * mode) {
     return f;
 }
 
-uint32_t is_file (uint8_t * path) {
+int is_file (char * path) {
     struct stat path_stat;
     stat(path, &path_stat);
     return S_ISREG(path_stat.st_mode);

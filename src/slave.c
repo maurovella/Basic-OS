@@ -15,14 +15,14 @@
 // TO-DO: close_fd function
 // TO-DO: redirect_fd function
 typedef struct subslave_info {
-    uint32_t pipe_fd[2];
+    int pipe_fd[2];
     fd_set sets_fd[2];  // [0] -> original, [1] -> backup
 } subslave_info;
 
-uint32_t slave (uint32_t app_to_slave[2], uint32_t slave_to_app[2]) {
+int slave (int app_to_slave[2], int slave_to_app[2]) {
 
-    uint8_t * args[] = {"md5sum", NULL, NULL}; // Second arg = file name -> read from app
-    uint8_t output[MD5_SIZE + 1] = {0};
+    char * args[] = {"md5sum", NULL, NULL}; // Second arg = file name -> read from app
+    char output[MD5_SIZE + 1] = {0};
 
     // app_to_slave fd: [0] -> read, [1] -> write
     // slave_to_app fd: [0] -> read, [1] -> write
