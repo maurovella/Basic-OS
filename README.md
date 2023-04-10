@@ -30,3 +30,7 @@ Error Code: "ERR_ACTION"
  (...)
 ## vista.c
  (...)
+
+
+## TENEMOS QUE COMPILAR CON ESTOS FLAGS
+-Wall -std=c99 -lrt -pthread
