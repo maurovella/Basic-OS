@@ -5,6 +5,8 @@
 #define ERR_CLOSING_FD 1
 #define ERR_CREATING_PIPE 2
 #define ERR_DUPLICATING_FD 3
+#define ERR_SELECTING_FD   21
+#define ERR_READING_PIPE    22
 
 #define ERR_NO_FILES_FOUND 4
 #define ERR_CREATING_FILE 5
@@ -25,4 +27,6 @@
 #define ERR_WAITING_SEM 18
 #define ERR_CLOSING_SEM 19
 #define ERR_UNLINKING_SEM 20
+
+
 #endif

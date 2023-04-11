@@ -51,7 +51,6 @@ int main (int argc, char * argv[]) {
     fd_backup_read_set = fd_read_set;
 
     // Creating shared memory and semaphores 
-    // TO-DO: shared memory and semaphore functions
     // ...
     
     // Creating slaves
