@@ -2,14 +2,14 @@
 #include <semaphore.h>
 
 void create_sem (sem_info * sem) {
-    if ((sem->addr = sem_open(sem->name, O_CREAT|O_RDWR, S_IRUSR|S_IWUSR, 0)) == (void *) -1) {
+    if ((sem->addr = sem_open(sem->name, O_CREAT|O_RDWR, S_IRUSR|S_IWUSR, 0)) == SEM_FAILED) {
         perror("Error creating semaphore.");
         exit(ERR_CREATING_SEM);
     }
 }
 
 void open_sem (sem_info * sem) {
-    if ((sem->addr = sem_open(sem->name, O_RDONLY, S_IRUSR, 0)) == (void *) -1) {
+    if ((sem->addr = sem_open(sem->name, O_RDONLY, S_IRUSR, 0)) == SEM_FAILED) {
         perror("Error opening semaphore.");
         exit(ERR_OPENING_SEM);
     }

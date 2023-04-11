@@ -12,7 +12,7 @@ void create_shm (shm_info * shm) {
         exit(ERR_TRUNCATING_SHM);
     }
 
-    if ((shm->addr = mmap(NULL, shm->size, PROT_READ|PROT_WRITE, MAP_SHARED, shm->fd, 0)) == (void *) -1) {
+    if ((shm->addr = mmap(NULL, shm->size, PROT_READ|PROT_WRITE, MAP_SHARED, shm->fd, 0)) == MAP_FAILED) {
         perror("Error mapping shared memory.");
         exit(ERR_MAPPING_SHM);
     }
@@ -24,7 +24,7 @@ void open_shm (shm_info * shm) {
         exit(ERR_OPENING_SHM);
     }
 
-    if ((shm->addr = mmap(NULL, shm->size, PROT_READ, MAP_SHARED, shm->fd, 0)) == (void *) -1) {
+    if ((shm->addr = mmap(NULL, shm->size, PROT_READ, MAP_SHARED, shm->fd, 0)) == MAP_FAILED) {
         perror("Error mapping shared memory.");
         exit(ERR_MAPPING_SHM);
     }

@@ -1,5 +1,5 @@
 #include "include/manager.h"
-
+#include <errno.h>
 #define READ 0
 #define WRITE 1
 #define FILES_PER_SLAVE 5
@@ -9,7 +9,7 @@ typedef struct slave_info {
     int app_to_slave[2]; // File descriptors connecting app to slave
     int slave_to_app[2]; // File descriptors connecting slave to app
     pid_t pid; // Slave's pid (pid_t or int?)
-}slave_info;
+} slave_info;
 
 void validate_files(int argc, int cant_files);
 
@@ -53,7 +53,7 @@ int main (int argc, char * argv[]) {
     // Creating shared memory and semaphores 
     // TO-DO: shared memory and semaphore functions
     // ...
-
+    
     // Creating slaves
     // ...
     return 0;
@@ -61,6 +61,7 @@ int main (int argc, char * argv[]) {
 
 void validate_files(int argc, int cant_files) {
     if (argc <= 1 || cant_files == 0){
+        errno = ENOENT;
         perror("No files found.");
         exit(ERR_NO_FILES_FOUND); 
     }

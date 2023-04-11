@@ -27,11 +27,11 @@ int slave (int app_to_slave[2], int slave_to_app[2]) {
     // app_to_slave fd: [0] -> read, [1] -> write
     // slave_to_app fd: [0] -> read, [1] -> write
 
-    // slave -> escribe en app (app_to_slave[WRITE])
+    // slave -> escribe en app (slave_to_app[WRITE])
     // app -> lee en slave (app_to_slave[READ])
 
     close_fd(app_to_slave[WRITE]);
-    close_fd(app_to_slave[READ]);
+    close_fd(slave_to_app[READ]);
     
     // app_to_slave fd: [0] -> read, [1] -> null
     // slave_to_app fd: [0] -> null, [1] -> write
@@ -55,4 +55,5 @@ int slave (int app_to_slave[2], int slave_to_app[2]) {
     FDZERO(&subslave.sets_fd[ORIGINAL]);
     FDSET(subslave.pipe_fd[READ], &subslave.sets_fd[ORIGINAL]);
     subslave.sets_fd[BACKUP] = subslave.sets_fd[ORIGINAL];
+    
 }
