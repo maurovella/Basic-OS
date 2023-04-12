@@ -2,8 +2,10 @@
 #include <errno.h>
 #define READ 0
 #define WRITE 1
-#define FILES_PER_SLAVE 5
+#define FILES_PER_SLAVE 2
 #define SLAVES_FROM_FILES(cant_files) (cant_files / FILES_PER_SLAVE + 1)
+#define MAX_SLAVES 50
+#define MAX(a, b) (a >= b ? a : b)
 
 typedef struct slave_info {
     int app_to_slave[2]; // File descriptors connecting app to slave
@@ -28,7 +30,9 @@ int main (int argc, char * argv[]) {
     validate_files(argc, cant_files);
     
 
-    int number_slaves = SLAVES_FROM_FILES(cant_files);
+    int number_slaves = MAX(SLAVES_FROM_FILES(cant_files), MAX_SLAVES);
+    int initial_files_per_slave = 2;
+
     slave_info slaves[number_slaves];
 
     FILE * output = create_file("respuesta.txt", "w");
@@ -54,7 +58,74 @@ int main (int argc, char * argv[]) {
     // ...
     
     // Creating slaves
-    // ...
+    pid_t last_pid = 1;
+    int current_slave;
+    for (current_slave = 0; current_slave < number_slaves && last_pid != 0; current_slave++) {
+        // TO-DO: create_slave
+        last_pid = fork();
+        slaves[current_slave].pid = last_pid;
+    }
+
+    if (last_pid == 0) {
+        // Child process
+        // Closing unused pipes
+        for (int i = 0; i < number_slaves; i++) {
+            if (i != current_slave - 1) {
+                close_fd(slaves[i].app_to_slave[READ]);
+                close_fd(slaves[i].app_to_slave[WRITE]);
+                close_fd(slaves[i].slave_to_app[READ]);
+                close_fd(slaves[i].slave_to_app[WRITE]);
+            }
+        }
+        // Call slave
+        slave(slaves[current_slave - 1].app_to_slave, slaves[current_slave - 1].slave_to_app);
+    } else {
+        // Parent process
+        // Closing unused pipes
+        for (int i = 0; i < number_slaves; i++) {
+            close_fd(slaves[i].app_to_slave[READ]);
+            close_fd(slaves[i].slave_to_app[WRITE]);
+        }
+        
+        //Distribution of initial_files_per_slave files per slave
+        int current_file = 0, files_read = 0;
+        for (int i = 0, current_file; current_file < cant_files; current_file += initial_files_per_slave, i++) {
+            for (int j = 0; j < initial_files_per_slave && current_file + j < cant_files; j++) {
+                write_fd(slaves[i].app_to_slave[WRITE], files[current_file + j], sizeof(char *));
+            }
+        }
+        // Reading results
+        while (files_read < cant_files) {
+            // Wait for a slave to finish with select_fd
+            select_fd(FD_SETSIZE, &fd_read_set, NULL, NULL, NULL);
+            for (int i = 0; i < number_slaves; i++) {
+                if (FD_ISSET(slaves[i].slave_to_app[READ], &fd_read_set)) {
+                    // Read result with void read_fd
+                    md5_info result;
+                    read_fd(slaves[i].slave_to_app[READ], &result, sizeof(char *));
+                    result.pid = slaves[i].pid;
+                    // Write result to output file
+                    fprintf(output, "MD5: %s -- NAME: %s -- PID: %d\n", result.hash, result.file_name, result.pid);    
+                    // Add new file to slave
+                    if (current_file < cant_files) {
+                        write_fd(slaves[i].app_to_slave[WRITE], files[current_file++], sizeof(char *));
+                    }
+                    // Update files_read
+                    files_read++;
+                }
+            }
+            fd_read_set = fd_backup_read_set;
+        }
+        // close unused pipes
+        for (int i = 0; i < number_slaves; i++) {
+            close_fd(slaves[i].app_to_slave[WRITE]);
+            close_fd(slaves[i].slave_to_app[READ]);
+            // Kill slaves
+            // TO-DO: kill_pid function kill = -1 cuando falla
+            kill(slaves[i].pid, SIGKILL);
+        }
+    }
+
     return 0;
 }
 

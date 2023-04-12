@@ -13,7 +13,17 @@
 #include <sys/select.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <signal.h>
 
+
+#define MD5_SIZE 32
+
+typedef struct md5_info {
+    char hash[MD5_SIZE + 1];
+    pid_t pid;
+    char file_name[256];
+    int files_left;
+} md5_info;
 
 /* -----  FILE DESCRIPTOR FUNCTIONS  ----- */
 
