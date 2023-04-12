@@ -50,9 +50,17 @@ int slave (int app_to_slave[2], int slave_to_app[2]) {
     subslave.sets_fd[BACKUP] = subslave.sets_fd[ORIGINAL];
 
     while (!finished) {
-        select_fd(2, &(app_to_slave_set[ORIGINAL]), NULL, NULL, NULL);
+        select_fd(FD_SETSIZE, &(app_to_slave_set[ORIGINAL]), NULL, NULL, NULL);
         app_to_slave_set[ORIGINAL] = app_to_slave_set[BACKUP];
-        read_fd(app_to_slave[READ], &file_name, sizeof(char *));  
+        read_fd(app_to_slave[READ], &file_name, sizeof(char *)); 
+        if (create_slave() == 0) {
+            args[1] = file_name;
+            execvp("md5sum", args);
+        } else {
+            md5_info result;
+            read_fd(subslave.pipe_fd[READ], result.hash, sizeof(result.hash));
+            result.pid = getpid();
+        }
         
     }
     

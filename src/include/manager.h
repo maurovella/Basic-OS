@@ -334,4 +334,38 @@ void close_sem (sem_info * sem);
 */
 void unlink_sem (sem_info * sem);
 
+/* ----- PROCESS FUNCTIONS ----- */
+
+/*
+    create_slave
+    -------------------------------------
+    Description: Creates a slave process using fork()
+    ** EXITS IF ERROR **
+    -------------------------------------
+    Parameters:
+        void
+    -------------------------------------
+    Returns:
+        pid of the slave process 
+
+*/
+
+pid_t create_slave();
+
+/*
+    kill_slave
+    -------------------------------------
+    Description: Kills a slave process using kill()
+                 with the signal SIGKILL
+    ** EXITS IF ERROR **
+    -------------------------------------
+    Parameters:
+        pid: pid of the slave process to be killed
+    -------------------------------------
+    Returns:
+        void
+
+*/
+
+void kill_slave(pid_t pid);
 #endif

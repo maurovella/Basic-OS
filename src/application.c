@@ -61,8 +61,8 @@ int main (int argc, char * argv[]) {
     pid_t last_pid = 1;
     int current_slave;
     for (current_slave = 0; current_slave < number_slaves && last_pid != 0; current_slave++) {
-        // TO-DO: create_slave
-        last_pid = fork();
+        // Creating slave
+        last_pid = create_slave();
         slaves[current_slave].pid = last_pid;
     }
 
@@ -103,7 +103,6 @@ int main (int argc, char * argv[]) {
                     // Read result with void read_fd
                     md5_info result;
                     read_fd(slaves[i].slave_to_app[READ], &result, sizeof(char *));
-                    result.pid = slaves[i].pid;
                     // Write result to output file
                     fprintf(output, "MD5: %s -- NAME: %s -- PID: %d\n", result.hash, result.file_name, result.pid);    
                     // Add new file to slave
@@ -116,13 +115,13 @@ int main (int argc, char * argv[]) {
             }
             fd_read_set = fd_backup_read_set;
         }
-        // close unused pipes
+        // Closing remaining pipes and killing all slave processes
         for (int i = 0; i < number_slaves; i++) {
+
             close_fd(slaves[i].app_to_slave[WRITE]);
             close_fd(slaves[i].slave_to_app[READ]);
-            // Kill slaves
-            // TO-DO: kill_pid function kill = -1 cuando falla
-            kill(slaves[i].pid, SIGKILL);
+            kill_slave(slaves[i].pid);
+            
         }
     }
 

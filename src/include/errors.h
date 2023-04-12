@@ -28,5 +28,7 @@
 #define ERR_CLOSING_SEM 19
 #define ERR_UNLINKING_SEM 20
 
+#define ERR_CREATING_SLAVE 23
+#define ERR_KILLING_PROCESS 24
 
 #endif
