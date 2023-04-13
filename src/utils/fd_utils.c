@@ -17,9 +17,27 @@ void create_pipe (int pipe_fds[2]) {
     }
 }
 
-void dup_fd (int fd, int new_fd) {
+int dup_fd (int fd, int new_fd) {
     if (dup2(fd, new_fd) == -1) {
         perror("Error duplicating file descriptor.");
         exit(ERR_DUPLICATING_FD);
+    }
+    // Since new_fd refers to fd, fd's original value is no longer useful
+    close_fd(fd);
+    return new_fd;
+}
+
+void select_fd (int nfds, fd_set * read_fds, fd_set * write_fds, fd_set * error_fds, struct timeval *timeout) {
+    if (select(nfds, read_fds, NULL, NULL, NULL) == -1) {
+        perror("Error selecting available file descriptors");
+        exit(ERR_SELECTING_FD);
+    }
+}
+
+
+void read_fd (int fd, void * buf, size_t count) {
+    if (read(fd, buf, count) == -1) {
+        perror("Error reading from pipe");
+        exit(ERR_READING_PIPE);
     }
 }

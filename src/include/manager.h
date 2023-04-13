@@ -13,7 +13,7 @@
 #include <sys/select.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include <string.h>
+#include <signal.h>
 
 #define MD5_SIZE 32
 typedef struct md5_info {
@@ -57,7 +57,7 @@ void create_pipe(int pipe_fds[2]);
     dup_fd
     -------------------------------------
     Description: Duplicates file descriptor
-                 deleting the original one
+                 closing the original one
     ** EXITS IF ERROR **
     -------------------------------------
     Parameters:
@@ -65,9 +65,51 @@ void create_pipe(int pipe_fds[2]);
         new_fd: Value of the new file descriptor          
     -------------------------------------
     Returns:
+        new_fd
+*/
+int dup_fd (int fd, int new_fd);
+
+/*
+    select_fd
+    -------------------------------------
+    Description: Using select(), selects fd 
+                 ready to make I/O operation 
+                 such as open() & read().
+    ** EXITS IF ERROR **
+    -------------------------------------
+    Parameters:
+        nfds: Amount of file descriptors to 
+              be checked in each set.
+        read_fds: File descriptor set of 
+                  exclusively read file descriptors.
+        write_fds: File descriptor set of 
+                   exclusively write file descriptors.
+        error_fds: File descriptor set of 
+                   exclusively error file descriptors.
+        timeout: specifies the interval that 
+                 select() should block waiting 
+                 for a file descriptor to become ready.  
+    -------------------------------------
+    Returns:
         void
 */
-void dup_fd (int fd, int new_fd);
+void select_fd (int nfds, fd_set *read_fds, fd_set *write_fds, fd_set *error_fds, struct timeval *timeout);
+
+/*
+    read_fd 
+    -------------------------------------
+    Description: Reads count bytes from fd and saves it on buf
+    ** EXITS IF ERROR **
+    -------------------------------------
+    Parameters:
+        fd: File descriptor to be read from
+        buf: Buffer where the information will be stored
+        count: Amount of bytes to read    
+    -------------------------------------
+    Returns:
+        void
+*/
+void read_fd (int fd, void *buf, size_t count);
 
 /* -----  FILE FUNCTIONS  ----- */
 
@@ -288,4 +330,39 @@ void close_sem (sem_info * sem);
         void
 */
 void unlink_sem (sem_info * sem);
+
+/* ----- PROCESS FUNCTIONS ----- */
+
+/*
+    create_slave
+    -------------------------------------
+    Description: Creates a slave process using fork()
+    ** EXITS IF ERROR **
+    -------------------------------------
+    Parameters:
+        void
+    -------------------------------------
+    Returns:
+        pid of the slave process 
+
+*/
+
+pid_t create_slave();
+
+/*
+    kill_slave
+    -------------------------------------
+    Description: Kills a slave process using kill()
+                 with the signal SIGKILL
+    ** EXITS IF ERROR **
+    -------------------------------------
+    Parameters:
+        pid: pid of the slave process to be killed
+    -------------------------------------
+    Returns:
+        void
+
+*/
+
+void kill_slave(pid_t pid);
 #endif
