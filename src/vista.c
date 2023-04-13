@@ -2,8 +2,6 @@
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 #include "include/manager.h"
 
-/* TEST --------*/
-
 int main(int argc, char * argv[])
 {
     char shm_name[256] = {0}, reading_sem_name[256] = {0}, closing_sem_name[256] = {0};
@@ -48,5 +46,3 @@ int main(int argc, char * argv[])
 
     return 0;
 }
-
-/* -------- TEST */

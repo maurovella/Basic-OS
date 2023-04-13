@@ -1,6 +1,7 @@
 #ifndef _MANAGER_H_
 #define _MANAGER_H_
 
+#define __DARWIN_C_LEVEL 200809L
 #define _XOPEN_SOURCE 500
 
 #include "errors.h"
@@ -14,6 +15,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <signal.h>
+#include <string.h>
 
 #define MD5_SIZE 32
 typedef struct md5_info {
@@ -110,6 +112,22 @@ void select_fd (int nfds, fd_set *read_fds, fd_set *write_fds, fd_set *error_fds
         void
 */
 void read_fd (int fd, void *buf, size_t count);
+
+/*
+    write_fd 
+    -------------------------------------
+    Description: Reads count bytes from fd and saves it on buf
+    ** EXITS IF ERROR **
+    -------------------------------------
+    Parameters:
+        fd: File descriptor to be read from
+        buf: Buffer where the information will be stored
+        count: Amount of bytes to read    
+    -------------------------------------
+    Returns:
+        void
+*/
+void write_fd (int fd, void * buf, size_t count);
 
 /* -----  FILE FUNCTIONS  ----- */
 
@@ -346,7 +364,6 @@ void unlink_sem (sem_info * sem);
         pid of the slave process 
 
 */
-
 pid_t create_slave();
 
 /*
@@ -363,6 +380,21 @@ pid_t create_slave();
         void
 
 */
-
 void kill_slave(pid_t pid);
+
+/*
+    slave
+    -------------------------------------
+    Description: Kills a slave process using kill()
+                 with the signal SIGKILL
+    ** EXITS IF ERROR **
+    -------------------------------------
+    Parameters:
+        pid: pid of the slave process to be killed
+    -------------------------------------
+    Returns:
+        void
+
+*/
+int slave (int app_to_slave[2], int slave_to_app[2]);
 #endif

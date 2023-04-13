@@ -5,9 +5,10 @@
 #define READ 0
 #define WRITE 1
 #define FILES_PER_SLAVE 2
-#define SLAVES_FROM_FILES(cant_files) (cant_files / FILES_PER_SLAVE + 1)
+#define SLAVES_FROM_FILES(cant_files) ((cant_files) / FILES_PER_SLAVE + 1)
 #define MAX_SLAVES 50
-#define MAX(a, b) (a >= b ? a : b)
+#define MAX_LEN 256
+#define MAX(a, b) ((a) >= (b) ? (a) : (b))
 
 typedef struct slave_info {
     int app_to_slave[2]; // File descriptors connecting app to slave
@@ -22,19 +23,18 @@ int main (int argc, char * argv[]) {
     char * files[argc];
 
     // i initial value = 1 because first argument is path
-    /*for (int i = 1; i < argc; i++) {
+    for (int i = 1; i < argc; i++) {
         // is_file returns 1 if parameter is a regular file
         if (is_file(argv[i])) {
             files[cant_files++] = argv[i];
         }
     }
 
-    validate_files(argc, cant_files);*/
+    validate_files(argc, cant_files);
     
 
     int number_slaves = MAX(SLAVES_FROM_FILES(cant_files), MAX_SLAVES);
     int initial_files_per_slave = 2;
-
     slave_info slaves[number_slaves];
 
     FILE * output = create_file("respuesta.txt", "w");
@@ -55,7 +55,7 @@ int main (int argc, char * argv[]) {
     }
 
     fd_backup_read_set = fd_read_set;
-    /* TEST --------*/
+    
     // Creating shared memory and semaphores 
     shm_info shm;
     sem_info reading_sem, closing_sem;
@@ -72,39 +72,13 @@ int main (int argc, char * argv[]) {
     printf("%s\n", reading_sem.name);
     printf("%s\n", closing_sem.name);
 
-    md5_info md5;
     post_sem(&closing_sem);
     
     
-    for (int i = 0; i < argc; i++) {
-        strcpy(md5.file_name, argv[i]);
-        md5.files_left = argc - i;
-        snprintf(md5.hash, sizeof(md5.hash), "hash del file %d", i);
-        md5.pid = getpid();
-        write_shm(shm.fd, &md5, sizeof(md5_info), sizeof(md5_info)*i);
-        post_sem(&reading_sem);
-        fprintf(output, "file_name: %s -- hash: %s -- pid: %d\n", md5.file_name, md5.hash, md5.pid);
-    }
-
-    close_shm(&shm);
-    close_sem(&reading_sem);
-
-    wait_sem(&closing_sem);
-    close_sem(&closing_sem);
-    
-    close_file(output);
-
-    unlink_shm(&shm);
-    unlink_sem(&reading_sem);
-    unlink_sem(&closing_sem);
-    
-    /* -------- TEST */
-
     // Creating slaves
     pid_t last_pid = 1;
     int current_slave;
     for (current_slave = 0; current_slave < number_slaves && last_pid != 0; current_slave++) {
-        // Creating slave
         last_pid = create_slave();
         slaves[current_slave].pid = last_pid;
     }
@@ -131,8 +105,8 @@ int main (int argc, char * argv[]) {
         }
         
         //Distribution of initial_files_per_slave files per slave
-        int current_file = 0, files_read = 0;
-        for (int i = 0, current_file; current_file < cant_files; current_file += initial_files_per_slave, i++) {
+        int  current_file = 0, files_read = 0;
+        for (int i = 0; current_file < cant_files; current_file += initial_files_per_slave, i++) {
             for (int j = 0; j < initial_files_per_slave && current_file + j < cant_files; j++) {
                 write_fd(slaves[i].app_to_slave[WRITE], files[current_file + j], sizeof(char *));
             }
@@ -168,6 +142,18 @@ int main (int argc, char * argv[]) {
         }
     }
 
+    close_shm(&shm);
+    close_sem(&reading_sem);
+
+    wait_sem(&closing_sem);
+    close_sem(&closing_sem);
+    
+    close_file(output);
+
+    unlink_shm(&shm);
+    unlink_sem(&reading_sem);
+    unlink_sem(&closing_sem);
+    
     return 0;
 }
 

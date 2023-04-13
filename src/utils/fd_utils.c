@@ -37,7 +37,14 @@ void select_fd (int nfds, fd_set * read_fds, fd_set * write_fds, fd_set * error_
 
 void read_fd (int fd, void * buf, size_t count) {
     if (read(fd, buf, count) == -1) {
-        perror("Error reading from pipe");
-        exit(ERR_READING_PIPE);
+        perror("Error reading from fd");
+        exit(ERR_READING_FD);
+    }
+}
+
+void write_fd (int fd, void * buf, size_t count) {
+    if (write(fd, buf, count) == -1) {
+        perror("Error writing to fd");
+        exit(ERR_WRITING_FD);
     }
 }
