@@ -13,7 +13,15 @@
 #include <sys/select.h>
 #include <stdlib.h>
 #include <unistd.h>
+#include <string.h>
 
+#define MD5_SIZE 32
+typedef struct md5_info {
+    char hash[MD5_SIZE + 1];
+    pid_t pid;
+    char file_name[256];
+    int files_left;
+} md5_info;
 
 /* -----  FILE DESCRIPTOR FUNCTIONS  ----- */
 
@@ -112,7 +120,6 @@ typedef struct shm_info {
     char * name;
     int fd;
     void * addr;
-    size_t size;
 } shm_info;
 
 /*

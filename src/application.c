@@ -1,3 +1,5 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 #include "include/manager.h"
 #include <errno.h>
 #define READ 0
@@ -18,14 +20,14 @@ int main (int argc, char * argv[]) {
     char * files[argc];
 
     // i initial value = 1 because first argument is path
-    for (int i = 1; i < argc; i++) {
+    /*for (int i = 1; i < argc; i++) {
         // is_file returns 1 if parameter is a regular file
         if (is_file(argv[i])) {
             files[cant_files++] = argv[i];
         }
     }
 
-    validate_files(argc, cant_files);
+    validate_files(argc, cant_files);*/
     
 
     int number_slaves = SLAVES_FROM_FILES(cant_files);
@@ -49,13 +51,54 @@ int main (int argc, char * argv[]) {
     }
 
     fd_backup_read_set = fd_read_set;
-
+    /* TEST --------*/
     // Creating shared memory and semaphores 
-    // TO-DO: shared memory and semaphore functions
-    // ...
+    shm_info shm;
+    sem_info reading_sem, closing_sem;
+
+    shm.name = "/shm";
+    reading_sem.name = "/sem";
+    closing_sem.name = "/closing_name";
+
+    create_shm(&shm);
+    create_sem(&reading_sem);
+    create_sem(&closing_sem);
+
+    printf("%s\n", shm.name);
+    printf("%s\n", reading_sem.name);
+    printf("%s\n", closing_sem.name);
+
+    md5_info md5;
+    post_sem(&closing_sem);
     
+    
+    for (int i = 0; i < argc; i++) {
+        strcpy(md5.file_name, argv[i]);
+        md5.files_left = argc - i;
+        snprintf(md5.hash, sizeof(md5.hash), "hash del file %d", i);
+        md5.pid = getpid();
+        write_shm(shm.fd, &md5, sizeof(md5_info), sizeof(md5_info)*i);
+        post_sem(&reading_sem);
+        fprintf(output, "file_name: %s -- hash: %s -- pid: %d\n", md5.file_name, md5.hash, md5.pid);
+    }
+
+    close_shm(&shm);
+    close_sem(&reading_sem);
+
+    wait_sem(&closing_sem);
+    close_sem(&closing_sem);
+    
+    close_file(output);
+
+    unlink_shm(&shm);
+    unlink_sem(&reading_sem);
+    unlink_sem(&closing_sem);
+    
+    /* -------- TEST */
+
     // Creating slaves
-    // ...
+    
+    
     return 0;
 }
 
