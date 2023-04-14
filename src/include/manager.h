@@ -116,13 +116,13 @@ void read_fd (int fd, void *buf, size_t count);
 /*
     write_fd 
     -------------------------------------
-    Description: Reads count bytes from fd and saves it on buf
+    Description: Writes count bytes from buf in fd
     ** EXITS IF ERROR **
     -------------------------------------
     Parameters:
-        fd: File descriptor to be read from
-        buf: Buffer where the information will be stored
-        count: Amount of bytes to read    
+        fd: File descriptor to be written 
+        buf: Buffer from which the information will be written
+        count: Amount of bytes to write    
     -------------------------------------
     Returns:
         void
@@ -374,7 +374,7 @@ pid_t create_slave();
     ** EXITS IF ERROR **
     -------------------------------------
     Parameters:
-        pid: pid of the slave process to be killed
+        pid: Pid of the slave process to be killed
     -------------------------------------
     Returns:
         void
@@ -385,16 +385,21 @@ void kill_slave(pid_t pid);
 /*
     slave
     -------------------------------------
-    Description: Kills a slave process using kill()
-                 with the signal SIGKILL
+    Description: Creates a sub-slave in order
+                 to calculate the md5 hash of
+                 file present in the app_to_slave pipe,
+                 then it writes the result in the 
+                 slave_to_app pipe
     ** EXITS IF ERROR **
     -------------------------------------
     Parameters:
-        pid: pid of the slave process to be killed
+        app_to_slave: File descriptors of the app_to_slave pipe
+        slave_to_app: File descriptors of the slave_to_app pipe
     -------------------------------------
     Returns:
-        void
+        0 on completion
+        exits if there is an error
 
 */
-int slave (int app_to_slave[2], int slave_to_app[2]);
+int slave (int * app_to_slave, int * slave_to_app);
 #endif
