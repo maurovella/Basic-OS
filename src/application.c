@@ -4,24 +4,26 @@
 #include <errno.h>
 #define READ 0
 #define WRITE 1
-#define INITIAL_FILES_PER_SLAVE 1
+#define INITIAL_FILES_PER_SLAVE 3
 #define SLAVES_FROM_FILES(cant_files) ((cant_files) / INITIAL_FILES_PER_SLAVE + 1)
 #define MAX_SLAVES 50
 #define MAX_LEN 256
 #define MIN(a, b) ((a) <= (b) ? (a) : (b))
 
 typedef struct slave_info {
-    int app_to_slave[2]; // File descriptors connecting app to slave
-    int slave_to_app[2]; // File descriptors connecting slave to app
-    pid_t pid; // Slave's pid (pid_t or int?)
-    char * file_name; 
+    int app_to_slave[2];    // File descriptors connecting app to slave
+    int slave_to_app[2];    // File descriptors connecting slave to app
+    pid_t pid;              // Slave's pid (pid_t or int?)
+    int file_iter;
+    char file_queue[INITIAL_FILES_PER_SLAVE][MAX_LEN];
+    char prev_file[MAX_LEN];
 } slave_info;
 
 void validate_files(int argc, int cant_files);
 
 int main (int argc, char * argv[]) {
     int cant_files = 0;
-    char * files[argc];
+    char files[argc][256];
 
     // i initial value = 1 because first argument is path
     for (int i = 1; i < argc; i++) {
@@ -32,9 +34,8 @@ int main (int argc, char * argv[]) {
     }
 
     validate_files(argc, cant_files);
-    
 
-    int number_slaves = 3;// TO-DO: MIN(SLAVES_FROM_FILES(cant_files), MAX_SLAVES);
+    int number_slaves = MIN(SLAVES_FROM_FILES(cant_files), MAX_SLAVES);
     slave_info slaves[number_slaves];
 
     FILE * output = create_file("respuesta.txt", "w");
@@ -106,13 +107,16 @@ int main (int argc, char * argv[]) {
             close_fd(slaves[i].slave_to_app[WRITE]);
         }
         
-        //Distribution of initial_files_per_slave files per slave
+        // Distribution of initial_files_per_slave files per slave
         int  current_file = 0, files_read = 0;
         for (int i = 0; current_file < number_slaves; current_file += INITIAL_FILES_PER_SLAVE, i++) {
             for (int j = 0; j < INITIAL_FILES_PER_SLAVE && current_file + j < cant_files; j++) {
-                write_fd(slaves[i].app_to_slave[WRITE], &(files[current_file + j]), sizeof(char *));
-                slaves[i].file_name = files[current_file + j];
+                //strcpy(slaves[i].file_queue[current_file % INITIAL_FILES_PER_SLAVE], files[current_file + j]);
+                strcpy(slaves[i].file_queue[current_file % INITIAL_FILES_PER_SLAVE], files[current_file + j]);
+                // printf("\n%s\n", slaves[i].file_queue[current_file % INITIAL_FILES_PER_SLAVE]);
             }
+            write_fd(slaves[i].app_to_slave[WRITE], &(slaves[i].file_queue[0]), sizeof(char *));
+            slaves[i].file_iter = 0;
         }
         // Reading results
         while (files_read < cant_files) {
@@ -126,15 +130,25 @@ int main (int argc, char * argv[]) {
                     read_fd(slaves[i].slave_to_app[READ], ans, MD5_SIZE * sizeof(char));
                     strcpy(result.hash, ans);
                     result.pid = slaves[i].pid;
-                    strcpy(result.file_name, slaves[i].file_name);
-                    // Write result to output file
-                    fprintf(output, "MD5: %s -- NAME: %s -- PID: %d\n", result.hash, result.file_name, result.pid);    
+                    
+                        
                     // Add new file to slave
                     if (current_file < cant_files) {
-                        write_fd(slaves[i].app_to_slave[WRITE], &(files[current_file]), sizeof(char *));
-                        slaves[i].file_name = files[current_file];
-                        current_file++;
+                        if (slaves[i].file_iter < INITIAL_FILES_PER_SLAVE) {
+                            result.file_name = slaves[i].file_queue[slaves[i].file_iter];
+                            write_fd(slaves[i].app_to_slave[WRITE], slaves[i].file_queue[slaves[i].file_iter++], sizeof(char *)); 
+                        } else {
+                            write_fd(slaves[i].app_to_slave[WRITE], &(files[current_file]), sizeof(char *));
+                            slaves[i].prev_file = files[current_file];
+                            strcpy(result.file_name, slaves[i].prev_file);
+                            current_file++;
+                        }
+                    } else {
+                        strcpy(result.file_name, slaves[i].prev_file);
                     }
+
+                    // Write result to output file
+                    fprintf(output, "MD5: %s -- NAME: %s -- PID: %d\n", result.hash, result.file_name, result.pid);
                     // Update files_read
                     files_read++;
                 }
