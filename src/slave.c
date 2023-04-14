@@ -16,10 +16,11 @@ typedef struct subslave_info {
 
 int finished = 0;
 
-int slave (int app_to_slave[2], int slave_to_app[2]) {
+int slave (int * app_to_slave, int * slave_to_app) {
 
     char * args[] = {"md5sum", NULL, NULL}; // Second arg = file name -> read from app
-    char file_name[256] = {0};
+    char * file_name;
+    char result[MD5_SIZE + 1] = {0};
 
     // app_to_slave fd: [0] -> read, [1] -> write
     // slave_to_app fd: [0] -> read, [1] -> write
@@ -53,16 +54,18 @@ int slave (int app_to_slave[2], int slave_to_app[2]) {
     while (!finished) {
         select_fd(FD_SETSIZE, &(app_to_slave_set[ORIGINAL]), NULL, NULL, NULL);
         app_to_slave_set[ORIGINAL] = app_to_slave_set[BACKUP];
-        //read_fd(app_to_slave[READ], &file_name, sizeof(char *)); 
+        read_fd(app_to_slave[READ], &file_name, sizeof(char *)); 
         if (create_slave() == 0) {
             args[1] = file_name;
             execvp("md5sum", args);
         } else {
-            md5_info result;
-            read_fd(subslave.pipe_fd[READ], result.hash, sizeof(result.hash));
-            result.pid = getpid();
-            strcpy(result.file_name, file_name);
-            write_fd(slave_to_app[WRITE], &result, sizeof(md5_info));
+            read_fd(subslave.pipe_fd[READ], result, MD5_SIZE * sizeof(char));
+            
+            // Flush stdin
+			int dump;
+			while ((dump = getchar()) != '\n' && dump != EOF);
+            wait(NULL);
+            write_fd(slave_to_app[WRITE], result, MD5_SIZE * sizeof(char));
         }
         
     }

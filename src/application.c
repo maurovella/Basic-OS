@@ -4,16 +4,17 @@
 #include <errno.h>
 #define READ 0
 #define WRITE 1
-#define FILES_PER_SLAVE 2
-#define SLAVES_FROM_FILES(cant_files) ((cant_files) / FILES_PER_SLAVE + 1)
+#define INITIAL_FILES_PER_SLAVE 1
+#define SLAVES_FROM_FILES(cant_files) ((cant_files) / INITIAL_FILES_PER_SLAVE + 1)
 #define MAX_SLAVES 50
 #define MAX_LEN 256
-#define MAX(a, b) ((a) >= (b) ? (a) : (b))
+#define MIN(a, b) ((a) <= (b) ? (a) : (b))
 
 typedef struct slave_info {
     int app_to_slave[2]; // File descriptors connecting app to slave
     int slave_to_app[2]; // File descriptors connecting slave to app
     pid_t pid; // Slave's pid (pid_t or int?)
+    char * file_name;
 } slave_info;
 
 void validate_files(int argc, int cant_files);
@@ -33,8 +34,7 @@ int main (int argc, char * argv[]) {
     validate_files(argc, cant_files);
     
 
-    int number_slaves = MAX(SLAVES_FROM_FILES(cant_files), MAX_SLAVES);
-    int initial_files_per_slave = 2;
+    int number_slaves = MIN(SLAVES_FROM_FILES(cant_files), MAX_SLAVES);
     slave_info slaves[number_slaves];
 
     FILE * output = create_file("respuesta.txt", "w");
@@ -98,6 +98,8 @@ int main (int argc, char * argv[]) {
         slave(slaves[current_slave - 1].app_to_slave, slaves[current_slave - 1].slave_to_app);
     } else {
         // Parent process
+        char ans[MD5_SIZE + 1] = {0};
+        md5_info result;
         // Closing unused pipes
         for (int i = 0; i < number_slaves; i++) {
             close_fd(slaves[i].app_to_slave[READ]);
@@ -106,9 +108,10 @@ int main (int argc, char * argv[]) {
         
         //Distribution of initial_files_per_slave files per slave
         int  current_file = 0, files_read = 0;
-        for (int i = 0; current_file < cant_files; current_file += initial_files_per_slave, i++) {
-            for (int j = 0; j < initial_files_per_slave && current_file + j < cant_files; j++) {
-                write_fd(slaves[i].app_to_slave[WRITE], files[current_file + j], sizeof(char *));
+        for (int i = 0; current_file < cant_files; current_file += INITIAL_FILES_PER_SLAVE, i++) {
+            for (int j = 0; j < INITIAL_FILES_PER_SLAVE && current_file + j < cant_files; j++) {
+                write_fd(slaves[i].app_to_slave[WRITE], &(files[current_file + j]), sizeof(char *));
+                slaves[i].file_name = files[current_file + j];
             }
         }
         // Reading results
@@ -118,8 +121,12 @@ int main (int argc, char * argv[]) {
             for (int i = 0; i < number_slaves; i++) {
                 if (FD_ISSET(slaves[i].slave_to_app[READ], &fd_read_set)) {
                     // Read result with void read_fd
-                    md5_info result;
-                    read_fd(slaves[i].slave_to_app[READ], &result, sizeof(char *));
+                    
+ 
+                    read_fd(slaves[i].slave_to_app[READ], ans, MD5_SIZE * sizeof(char));
+                    strcpy(result.hash, ans);
+                    result.pid = slaves[i].pid;
+                    strcpy(result.file_name, slaves[i].file_name);
                     // Write result to output file
                     fprintf(output, "MD5: %s -- NAME: %s -- PID: %d\n", result.hash, result.file_name, result.pid);    
                     // Add new file to slave
