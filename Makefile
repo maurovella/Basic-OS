@@ -20,6 +20,9 @@ application: $(SRC_DIR)/application.c $(UTILS)
 vista: $(SRC_DIR)/vista.c $(UTILS)
 	@$(GCC) $< $(UTILS) -o $@ $(GCCFLAGS) -lrt -lpthread
 
-clean: 
+clean: cleanpvs
 	@rm -rf $(EXE_DIR)
 	@rm -f $(OUT)
+
+cleanpvs:
+	@rm -f PVS-Studio.log report.tasks strace_out
