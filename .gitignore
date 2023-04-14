@@ -1,6 +1,9 @@
 # Prerequisites
 *.d
 
+# Folder with Big Files to test
+test_files/
+
 # VSCode
 .vscode/
 
