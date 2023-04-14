@@ -63,7 +63,7 @@ int slave (int * app_to_slave, int * slave_to_app) {
             
             // Flush stdin
 			int dump;
-			while ((dump = getchar()) != '\n' && dump != EOF);
+			while ((dump = getchar()) != '\n' && dump != EOF) {;}
             wait(NULL);
             write_fd(slave_to_app[WRITE], result, MD5_SIZE * sizeof(char));
         }
