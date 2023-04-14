@@ -14,7 +14,7 @@ typedef struct slave_info {
     int app_to_slave[2]; // File descriptors connecting app to slave
     int slave_to_app[2]; // File descriptors connecting slave to app
     pid_t pid; // Slave's pid (pid_t or int?)
-    char * file_name;
+    char * file_name; 
 } slave_info;
 
 void validate_files(int argc, int cant_files);
@@ -34,7 +34,7 @@ int main (int argc, char * argv[]) {
     validate_files(argc, cant_files);
     
 
-    int number_slaves = MIN(SLAVES_FROM_FILES(cant_files), MAX_SLAVES);
+    int number_slaves = 3;// TO-DO: MIN(SLAVES_FROM_FILES(cant_files), MAX_SLAVES);
     slave_info slaves[number_slaves];
 
     FILE * output = create_file("respuesta.txt", "w");
@@ -108,7 +108,7 @@ int main (int argc, char * argv[]) {
         
         //Distribution of initial_files_per_slave files per slave
         int  current_file = 0, files_read = 0;
-        for (int i = 0; current_file < cant_files; current_file += INITIAL_FILES_PER_SLAVE, i++) {
+        for (int i = 0; current_file < number_slaves; current_file += INITIAL_FILES_PER_SLAVE, i++) {
             for (int j = 0; j < INITIAL_FILES_PER_SLAVE && current_file + j < cant_files; j++) {
                 write_fd(slaves[i].app_to_slave[WRITE], &(files[current_file + j]), sizeof(char *));
                 slaves[i].file_name = files[current_file + j];
@@ -131,7 +131,9 @@ int main (int argc, char * argv[]) {
                     fprintf(output, "MD5: %s -- NAME: %s -- PID: %d\n", result.hash, result.file_name, result.pid);    
                     // Add new file to slave
                     if (current_file < cant_files) {
-                        write_fd(slaves[i].app_to_slave[WRITE], files[current_file++], sizeof(char *));
+                        write_fd(slaves[i].app_to_slave[WRITE], &(files[current_file]), sizeof(char *));
+                        slaves[i].file_name = files[current_file];
+                        current_file++;
                     }
                     // Update files_read
                     files_read++;
