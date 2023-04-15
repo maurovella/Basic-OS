@@ -2,13 +2,6 @@
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 #include "include/manager.h"
 #include <errno.h>
-#define READ 0
-#define WRITE 1
-#define INITIAL_FILES_PER_SLAVE 3
-#define SLAVES_FROM_FILES(cant_files) (((cant_files) / (INITIAL_FILES_PER_SLAVE * 3)) + 1)
-#define MAX_SLAVES 50
-#define MAX_LEN 256
-#define MIN(a, b) ((a) <= (b) ? (a) : (b))
 
 typedef struct slave_info {
     int app_to_slave[2]; // File descriptors connecting app to slave
@@ -16,7 +9,7 @@ typedef struct slave_info {
     pid_t pid; // Slave's pid 
 } slave_info;
 
-void validate_files(int argc, int cant_files);
+void validate_args(int argc, int cant_files);
 
 int main (int argc, char * argv[]) {
     int cant_files = 0;
@@ -24,52 +17,53 @@ int main (int argc, char * argv[]) {
 
     // i initial value = 1 because first argument is path
     for (int i = 1; i < argc; i++) {
-        // is_file returns 1 if parameter is a regular file
         if (is_file(argv[i])) {
             files[cant_files++] = argv[i];
         }
     }
 
-    validate_files(argc, cant_files);
+    validate_args(argc, cant_files);
 
     int number_slaves = MIN(SLAVES_FROM_FILES(cant_files), MAX_SLAVES);
     slave_info slaves[number_slaves];
 
     FILE * output = create_file("respuesta.txt", "w");
     
-    // Creating pipes between master and slave
-    
-    fd_set fd_read_set, fd_backup_read_set;
+    fd_set fd_read_set[2];
 
     // Initializes the set on NULL
-    FD_ZERO(&fd_read_set);
+    FD_ZERO(&fd_read_set[ORIGINAL]);
 
     for (int i = 0; i < number_slaves; i++) {
         create_pipe(slaves[i].app_to_slave);
         create_pipe(slaves[i].slave_to_app);
 
         // Includes fd in fd_set (we add all read fd to the set)
-        FD_SET(slaves[i].slave_to_app[READ], &fd_read_set);
+        FD_SET(slaves[i].slave_to_app[READ], &(fd_read_set[ORIGINAL]));
     }
 
-    fd_backup_read_set = fd_read_set;
+    // Backup original set
+    fd_read_set[BACKUP] = fd_read_set[ORIGINAL];
     
     // Creating shared memory and semaphores 
     shm_info shm;
     sem_info reading_sem, closing_sem;
 
     shm.name = "/shm";
-    reading_sem.name = "/sem";
-    closing_sem.name = "/closing_name";
+    reading_sem.name = "/reading_sem";
+    closing_sem.name = "/closing_sem";
 
     create_shm(&shm);
     create_sem(&reading_sem);
     create_sem(&closing_sem);
 
-    post_sem(&closing_sem); //-> closing = 1 wakes up any process that has a wait(closing) call
+    // closing_sem = 1 wakes up any process that has a wait(closing) call
+    post_sem(&closing_sem); 
 
+    // Turning off print buffering
     setvbuf(stdout, NULL, _IONBF, 0);
 
+    /* --- BROADCAST FOR VISTA PROCESS --- */
     printf("%s\n", shm.name);
     printf("%s\n", reading_sem.name);
     printf("%s\n", closing_sem.name);
@@ -77,9 +71,6 @@ int main (int argc, char * argv[]) {
     // Waiting for vista process to appear
     sleep(5);
 
-    
-    
-    
     // Creating slaves
     pid_t last_pid = 1;
     int current_slave;
@@ -90,6 +81,7 @@ int main (int argc, char * argv[]) {
 
     if (last_pid == 0) {
         // Child process
+
         // Closing unused pipes
         for (int i = 0; i < number_slaves; i++) {
             if (i != current_slave - 1) {
@@ -99,58 +91,74 @@ int main (int argc, char * argv[]) {
                 close_fd(slaves[i].slave_to_app[WRITE]);
             }
         }
-        // Call slave
+
         slave(slaves[current_slave - 1].app_to_slave, slaves[current_slave - 1].slave_to_app);
+        
     } else {
         // Parent process
-        char ans[255 + 1] = {0};
+
+        char ans[MAX_LEN] = {0};
         md5_info result;
+        int current_file = 0, files_read = 0;
+        
+        // Initializing result on null
         memset(&result, 0, sizeof(md5_info));
+        
         // Closing unused pipes
         for (int i = 0; i < number_slaves; i++) {
             close_fd(slaves[i].app_to_slave[READ]);
             close_fd(slaves[i].slave_to_app[WRITE]);
         }
         
-        //Distribution of initial_files_per_slave files per slave
-        int current_file = 0, files_read = 0;
-        
-        // n_slaves * init_files = init_dist
+        // Distribution of INITIAL_FILES_PER_SLAVE  files per slave
+        // Initial distribution = number_slaves * INITIAL_FILES_PER_SLAVE 
         for (int current_slave = 0; current_file < number_slaves * INITIAL_FILES_PER_SLAVE; current_slave++) {
             for (int i = 0; i < INITIAL_FILES_PER_SLAVE && current_file < cant_files; i++) {
+
+                // Writing the file's name to the pipe
                 write_fd(slaves[current_slave].app_to_slave[WRITE], &(files[current_file]), sizeof(char *));
                 current_file++;
             }
         }
+        
         // Reading results
         while (files_read < cant_files) {
+            
             // Wait for a slave to finish with select_fd
-            select_fd(FD_SETSIZE, &fd_read_set, NULL, NULL, NULL);
+            select_fd(FD_SETSIZE, &(fd_read_set[ORIGINAL]), NULL, NULL, NULL);
             for (int i = 0; i < number_slaves; i++) {
-                if (FD_ISSET(slaves[i].slave_to_app[READ], &fd_read_set)) {
+                if (FD_ISSET(slaves[i].slave_to_app[READ], &(fd_read_set[ORIGINAL]))) {
                 
                     read_fd(slaves[i].slave_to_app[READ], ans, MAX_LEN * sizeof(char));
 
+                    // Filling md5_info fields
                     strcpy(result.hash, strtok(ans, " "));
                     strcpy(result.file_name, strtok(NULL, " "));
                     result.pid = slaves[i].pid;
                     result.files_left = cant_files - files_read;
 
+                    // Writing result to the shared memory
                     write_shm(shm.fd, &result, sizeof(md5_info), files_read);
                     post_sem(&reading_sem);
-                    // Write result to output file
-                    fprintf(output, "MD5: %s -- NAME: %s -- PID: %d\n", result.hash, result.file_name, result.pid);    
-                    // Add new file to slave
+
+                    // Writing result to output file
+                    fprintf(output, "MD5: %s -- NAME: %s -- PID: %d\n", result.hash, result.file_name, result.pid);
+
+                    // Distribution of remaining files
                     if (current_file < cant_files) {
                         write_fd(slaves[i].app_to_slave[WRITE], &(files[current_file]), sizeof(char *));
                         current_file++;
                     }
-                    // Update files_read
+                    
+                    // Updating files_read
                     files_read++;
                 }
             }
-            fd_read_set = fd_backup_read_set;
+
+            // Going back to the original state
+            fd_read_set[ORIGINAL] = fd_read_set[BACKUP];
         }
+
         // Closing remaining pipes and killing all slave processes
         for (int i = 0; i < number_slaves; i++) {
 
@@ -161,6 +169,7 @@ int main (int argc, char * argv[]) {
         }
     }
 
+    // Closing shared memory, semaphores and output file
     close_shm(&shm);
     close_sem(&reading_sem);
 
@@ -176,7 +185,7 @@ int main (int argc, char * argv[]) {
     return 0;
 }
 
-void validate_files(int argc, int cant_files) {
+void validate_args(int argc, int cant_files) {
     if (argc <= 1 || cant_files == 0){
         errno = ENOENT;
         perror("No files found.");

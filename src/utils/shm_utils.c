@@ -3,8 +3,6 @@
 #include "./../include/manager.h"
 #include <sys/mman.h>
 
-#define SHM_SIZE 16834
-
 void create_shm (shm_info * shm) {
     if ((shm->fd = shm_open(shm->name, O_CREAT|O_RDWR, S_IRUSR|S_IWUSR)) == -1) {
         perror("Error creating shared memory.");

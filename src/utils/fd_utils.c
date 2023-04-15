@@ -22,7 +22,6 @@ int dup_fd (int fd, int new_fd) {
         perror("Error duplicating file descriptor.");
         exit(ERR_DUPLICATING_FD);
     }
-    // Since new_fd refers to fd, fd's original value is no longer useful
     close_fd(fd);
     return new_fd;
 }

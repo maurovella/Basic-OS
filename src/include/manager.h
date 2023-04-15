@@ -5,6 +5,7 @@
 #define _XOPEN_SOURCE 500
 
 #include "errors.h"
+#include "defs.h"
 #include <sys/types.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -16,14 +17,6 @@
 #include <unistd.h>
 #include <signal.h>
 #include <string.h>
-
-#define MD5_SIZE 32
-typedef struct md5_info {
-    char hash[MD5_SIZE + 1];
-    pid_t pid;
-    char file_name[256];
-    int files_left;
-} md5_info;
 
 /* -----  FILE DESCRIPTOR FUNCTIONS  ----- */
 
@@ -152,7 +145,7 @@ FILE * create_file (char * file_name, char * mode);
     Description: Checks if path is a regular file
     -------------------------------------
     Parameters:
-        path: path to the element to be evaluated
+        path: Path to the element to be evaluated
     -------------------------------------
     Returns:
         1 if path is a regular file
@@ -175,12 +168,6 @@ int is_file (char * path);
 void close_file (FILE * file);
 
 /* -----  SHARED MEMORY FUNCTIONS  ----- */
-
-typedef struct shm_info {
-    char * name;
-    int fd;
-    void * addr;
-} shm_info;
 
 /*
     create_shm
@@ -259,11 +246,6 @@ void close_shm (shm_info * shm);
 void unlink_shm (shm_info * shm);
 
 /* ----- SEMAPHORE FUNCTIONS ----- */
-
-typedef struct sem_info { 
-    char * name;
-    void * addr;
-} sem_info;
 
 /*
     create_sem
