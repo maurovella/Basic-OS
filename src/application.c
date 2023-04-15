@@ -32,7 +32,6 @@ int main (int argc, char * argv[]) {
     }
 
     validate_files(argc, cant_files);
-    printf("%d\n", cant_files);
 
     int number_slaves = MIN(SLAVES_FROM_FILES(cant_files), MAX_SLAVES);
     slave_info slaves[number_slaves];
@@ -68,11 +67,18 @@ int main (int argc, char * argv[]) {
     create_sem(&reading_sem);
     create_sem(&closing_sem);
 
+    post_sem(&closing_sem); //-> closing = 1 wakes up any process that has a wait(closing) call
+
+    setvbuf(stdout, NULL, _IONBF, 0);
+
     printf("%s\n", shm.name);
     printf("%s\n", reading_sem.name);
     printf("%s\n", closing_sem.name);
 
-    post_sem(&closing_sem);
+    // Waiting for vista process to appear
+    sleep(5);
+
+    
     
     
     // Creating slaves
@@ -100,6 +106,7 @@ int main (int argc, char * argv[]) {
         // Parent process
         char ans[MD5_SIZE + 1] = {0};
         md5_info result;
+        memset(&result, 0, sizeof(md5_info));
         // Closing unused pipes
         for (int i = 0; i < number_slaves; i++) {
             close_fd(slaves[i].app_to_slave[READ]);
@@ -107,13 +114,15 @@ int main (int argc, char * argv[]) {
         }
         
         //Distribution of initial_files_per_slave files per slave
-        int  current_file = 0, files_read = 0;
+        int current_file = 0, files_read = 0;
         
         // n_slaves * init_files = init_dist
         for (int current_slave = 0; current_file < number_slaves * INITIAL_FILES_PER_SLAVE; current_slave++) {
             for (int i = 0; i < INITIAL_FILES_PER_SLAVE && current_file < cant_files; i++) {
                 write_fd(slaves[current_slave].app_to_slave[WRITE], &(files[current_file]), sizeof(char *));
-                slaves[current_slave].file_name = files[current_file++];
+                // Problem saving file_name -> it saves the last one
+                slaves[current_slave].file_name = files[current_file];
+                current_file++;
             }
         }
         // Reading results
@@ -124,9 +133,13 @@ int main (int argc, char * argv[]) {
                 if (FD_ISSET(slaves[i].slave_to_app[READ], &fd_read_set)) {
                     // Read result with void read_fd
                     read_fd(slaves[i].slave_to_app[READ], ans, MD5_SIZE * sizeof(char));
+                    //strcpy(result.hash, strtok(ans, " "));
                     strcpy(result.hash, ans);
                     result.pid = slaves[i].pid;
                     strcpy(result.file_name, slaves[i].file_name);
+                    result.files_left = cant_files - files_read;
+                    write_shm(shm.fd, &result, sizeof(md5_info), files_read);
+                    post_sem(&reading_sem);
                     // Write result to output file
                     fprintf(output, "MD5: %s -- NAME: %s -- PID: %d\n", result.hash, result.file_name, result.pid);    
                     // Add new file to slave
