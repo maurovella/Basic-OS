@@ -20,7 +20,7 @@ int slave (int * app_to_slave, int * slave_to_app) {
 
     char * args[] = {"md5sum", NULL, NULL}; // Second arg = file name -> read from app
     char * file_name;
-    char result[MD5_SIZE + 1] = {0};
+    char result[255 + 1] = {0};
 
     // app_to_slave fd: [0] -> read, [1] -> write
     // slave_to_app fd: [0] -> read, [1] -> write
@@ -59,13 +59,16 @@ int slave (int * app_to_slave, int * slave_to_app) {
             args[1] = file_name;
             execvp("md5sum", args);
         } else {
-            read_fd(subslave.pipe_fd[READ], result, MD5_SIZE * sizeof(char));
-            
+            // MD5 + 1 (" ") + strlen(file_name) + 1 (\0)
+            int result_len = MD5_SIZE + 1 + strlen(file_name) + 1;
+            read_fd(subslave.pipe_fd[READ], result, result_len * sizeof(char));
+            result[result_len] = 0;
+        
             // Flush stdin
 			int dump;
 			while ((dump = getchar()) != '\n' && dump != EOF) {;}
             wait(NULL);
-            write_fd(slave_to_app[WRITE], result, MD5_SIZE * sizeof(char));
+            write_fd(slave_to_app[WRITE], result, 256 * sizeof(char));
         }
         
     }

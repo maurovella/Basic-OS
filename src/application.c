@@ -13,8 +13,7 @@
 typedef struct slave_info {
     int app_to_slave[2]; // File descriptors connecting app to slave
     int slave_to_app[2]; // File descriptors connecting slave to app
-    pid_t pid; // Slave's pid (pid_t or int?)
-    char * file_name; 
+    pid_t pid; // Slave's pid 
 } slave_info;
 
 void validate_files(int argc, int cant_files);
@@ -104,7 +103,7 @@ int main (int argc, char * argv[]) {
         slave(slaves[current_slave - 1].app_to_slave, slaves[current_slave - 1].slave_to_app);
     } else {
         // Parent process
-        char ans[MD5_SIZE + 1] = {0};
+        char ans[255 + 1] = {0};
         md5_info result;
         memset(&result, 0, sizeof(md5_info));
         // Closing unused pipes
@@ -120,8 +119,6 @@ int main (int argc, char * argv[]) {
         for (int current_slave = 0; current_file < number_slaves * INITIAL_FILES_PER_SLAVE; current_slave++) {
             for (int i = 0; i < INITIAL_FILES_PER_SLAVE && current_file < cant_files; i++) {
                 write_fd(slaves[current_slave].app_to_slave[WRITE], &(files[current_file]), sizeof(char *));
-                // Problem saving file_name -> it saves the last one
-                slaves[current_slave].file_name = files[current_file];
                 current_file++;
             }
         }
@@ -131,13 +128,14 @@ int main (int argc, char * argv[]) {
             select_fd(FD_SETSIZE, &fd_read_set, NULL, NULL, NULL);
             for (int i = 0; i < number_slaves; i++) {
                 if (FD_ISSET(slaves[i].slave_to_app[READ], &fd_read_set)) {
-                    // Read result with void read_fd
-                    read_fd(slaves[i].slave_to_app[READ], ans, MD5_SIZE * sizeof(char));
-                    //strcpy(result.hash, strtok(ans, " "));
-                    strcpy(result.hash, ans);
+                
+                    read_fd(slaves[i].slave_to_app[READ], ans, MAX_LEN * sizeof(char));
+
+                    strcpy(result.hash, strtok(ans, " "));
+                    strcpy(result.file_name, strtok(NULL, " "));
                     result.pid = slaves[i].pid;
-                    strcpy(result.file_name, slaves[i].file_name);
                     result.files_left = cant_files - files_read;
+
                     write_shm(shm.fd, &result, sizeof(md5_info), files_read);
                     post_sem(&reading_sem);
                     // Write result to output file
@@ -145,7 +143,6 @@ int main (int argc, char * argv[]) {
                     // Add new file to slave
                     if (current_file < cant_files) {
                         write_fd(slaves[i].app_to_slave[WRITE], &(files[current_file]), sizeof(char *));
-                        slaves[i].file_name = files[current_file];
                         current_file++;
                     }
                     // Update files_read
