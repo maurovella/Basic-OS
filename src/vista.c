@@ -4,44 +4,35 @@
 
 int main(int argc, char * argv[])
 {
-    char shm_name[MAX_LEN] = {0}, reading_sem_name[MAX_LEN] = {0}, closing_sem_name[MAX_LEN] = {0};
+    char shm_name[MAX_LEN] = {0}, reading_sem_name[MAX_LEN] = {0};
     
-    if (argc != 4) {
+    if (argc != 3){//4) {
         
         // Shm and sem info was sent through stdin
         fgets(shm_name, MAX_LEN, stdin);
         fgets(reading_sem_name, MAX_LEN, stdin);
-        fgets(closing_sem_name, MAX_LEN, stdin);
 
         shm_name[strcspn(shm_name, "\n")] = '\0'; // Elimina el carácter de nueva línea de shm_name
         reading_sem_name[strcspn(reading_sem_name, "\n")] = '\0'; // Elimina el carácter de nueva línea de sem_name
-        closing_sem_name[strcspn(closing_sem_name, "\n")] = '\0';
+    
     } else {
         
         // Shm and sem info was sent through argv
         strcpy(shm_name, argv[1]);
         strcpy(reading_sem_name, argv[2]);
-        strcpy(closing_sem_name, argv[3]);
+        
     }
-
-    
 
     shm_info shm;
     sem_info reading_sem;
-    sem_info closing_sem;
     
     shm.name = shm_name;
     reading_sem.name = reading_sem_name;
-    closing_sem.name = closing_sem_name;
 
-    
-    // Creating shared memory and semaphores
+    // Creating shared memory and semaphore
     open_shm(&shm);
     open_sem(&reading_sem);
-    open_sem(&closing_sem);
 
-    // Signaling application process that resources are being read and that they shouldn't be destroyed
-    wait_sem(&closing_sem);
     md5_info md5;
 
     int finished = 0;
@@ -60,12 +51,11 @@ int main(int argc, char * argv[])
     }
 
     // Signal application process that all resources have been read and that they can now be destroyed
-    post_sem(&closing_sem);
+    post_sem(&reading_sem);
 
-    // Closing shared memory and semaphores
+    // Closing shared memory and semaphore
     close_shm(&shm);
     close_sem(&reading_sem);
-    close_sem(&closing_sem);
 
     return 0;
 }

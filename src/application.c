@@ -45,20 +45,15 @@ int main (int argc, char * argv[]) {
     // Backup original set
     fd_read_set[BACKUP] = fd_read_set[ORIGINAL];
     
-    // Creating shared memory and semaphores 
+    // Creating shared memory and semaphore 
     shm_info shm;
-    sem_info reading_sem, closing_sem;
+    sem_info reading_sem;
 
-    shm.name = "/shm";
-    reading_sem.name = "/reading_sem";
-    closing_sem.name = "/closing_sem";
+    shm.name = SHM_NAME;
+    reading_sem.name = SEM_NAME;
 
     create_shm(&shm);
     create_sem(&reading_sem);
-    create_sem(&closing_sem);
-
-    // closing_sem = 1 wakes up any process that has a wait(closing) call
-    post_sem(&closing_sem); 
 
     // Turning off print buffering
     setvbuf(stdout, NULL, _IONBF, 0);
@@ -66,7 +61,6 @@ int main (int argc, char * argv[]) {
     /* --- BROADCAST FOR VISTA PROCESS --- */
     printf("%s\n", shm.name);
     printf("%s\n", reading_sem.name);
-    printf("%s\n", closing_sem.name);
 
     // Waiting for vista process to appear
     sleep(5);
@@ -169,18 +163,18 @@ int main (int argc, char * argv[]) {
         }
     }
 
-    // Closing shared memory, semaphores and output file
+    // Closing shared memory, semaphore and output file
     close_shm(&shm);
-    close_sem(&reading_sem);
 
-    wait_sem(&closing_sem);
-    close_sem(&closing_sem);
+    // Waiting for vista process to finish reading
+    // If there is no vista process, continue
+    wait_sem(&reading_sem);
+    close_sem(&reading_sem);
     
     close_file(output);
 
     unlink_shm(&shm);
     unlink_sem(&reading_sem);
-    unlink_sem(&closing_sem);
     
     return 0;
 }

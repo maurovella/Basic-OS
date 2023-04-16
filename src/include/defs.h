@@ -14,6 +14,8 @@
 #define MIN(a, b) ((a) <= (b) ? (a) : (b))
 #define MD5_SIZE 32
 #define SHM_SIZE 16834
+#define SHM_NAME "/shm"
+#define SEM_NAME "/reading_sem"
 
 typedef struct md5_info {
     char hash[MD5_SIZE + 1];
