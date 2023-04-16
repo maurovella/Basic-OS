@@ -6,7 +6,8 @@
 typedef struct slave_info {
     int app_to_slave[2]; // File descriptors connecting app to slave
     int slave_to_app[2]; // File descriptors connecting slave to app
-    pid_t pid; // Slave's pid 
+    pid_t pid;           // Slave's pid 
+    int files_solved;    // Amount of files solved by the slave
 } slave_info;
 
 void validate_args(int argc, int cant_files);
@@ -113,6 +114,7 @@ int main (int argc, char * argv[]) {
                 write_fd(slaves[current_slave].app_to_slave[WRITE], &(files[current_file]), sizeof(char *));
                 current_file++;
             }
+            slaves[current_slave].files_solved = 0;
         }
         
         // Reading results
@@ -124,6 +126,9 @@ int main (int argc, char * argv[]) {
                 if (FD_ISSET(slaves[i].slave_to_app[READ], &(fd_read_set[ORIGINAL]))) {
                 
                     read_fd(slaves[i].slave_to_app[READ], ans, MAX_LEN * sizeof(char));
+
+                    // Updating files_solved
+                    slaves[i].files_solved++;
 
                     // Filling md5_info fields
                     strcpy(result.hash, strtok(ans, " "));
@@ -139,7 +144,8 @@ int main (int argc, char * argv[]) {
                     fprintf(output, "MD5: %s -- NAME: %s -- PID: %d\n", result.hash, result.file_name, result.pid);
 
                     // Distribution of remaining files
-                    if (current_file < cant_files) {
+                    // Only give files to a slave once it has finished its initial distribution
+                    if (current_file < cant_files && slaves[i].files_solved >= INITIAL_FILES_PER_SLAVE) {
                         write_fd(slaves[i].app_to_slave[WRITE], &(files[current_file]), sizeof(char *));
                         current_file++;
                     }
