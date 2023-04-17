@@ -6,21 +6,25 @@ int main(int argc, char * argv[])
 {
     char shm_name[MAX_LEN] = {0}, reading_sem_name[MAX_LEN] = {0};
     
-    if (argc != 3){//4) {
-        
+    if (argc != 3) { 
         // Shm and sem info was sent through stdin
         fgets(shm_name, MAX_LEN, stdin);
         fgets(reading_sem_name, MAX_LEN, stdin);
-
-        shm_name[strcspn(shm_name, "\n")] = '\0'; // Elimina el carácter de nueva línea de shm_name
-        reading_sem_name[strcspn(reading_sem_name, "\n")] = '\0'; // Elimina el carácter de nueva línea de sem_name
+        
+        // Replacing newline caracter with '\0'
+        shm_name[strcspn(shm_name, "\n")] = '\0'; 
+        reading_sem_name[strcspn(reading_sem_name, "\n")] = '\0'; 
     
     } else {
-        
+
+        if (strlen(argv[1]) >= MAX_LEN || strlen(argv[2]) >= MAX_LEN) {
+            perror("Argument length is too long");
+            exit(ERR_INVALID_LENGTH);
+        }
+
         // Shm and sem info was sent through argv
         strcpy(shm_name, argv[1]);
         strcpy(reading_sem_name, argv[2]);
-        
     }
 
     shm_info shm;
