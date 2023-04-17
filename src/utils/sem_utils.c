@@ -1,7 +1,6 @@
 // This is a personal academic project. Dear PVS-Studio, please check it.
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 #include "./../include/manager.h"
-#include <semaphore.h>
 
 void create_sem (sem_info * sem) {
     if ((sem->addr = sem_open(sem->name, O_CREAT|O_RDWR, S_IRUSR|S_IWUSR, 0)) == SEM_FAILED) {

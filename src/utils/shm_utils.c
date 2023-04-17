@@ -1,7 +1,6 @@
 // This is a personal academic project. Dear PVS-Studio, please check it.
 // PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 #include "./../include/manager.h"
-#include <sys/mman.h>
 
 void create_shm (shm_info * shm) {
     if ((shm->fd = shm_open(shm->name, O_CREAT|O_RDWR, S_IRUSR|S_IWUSR)) == -1) {

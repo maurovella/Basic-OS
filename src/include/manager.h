@@ -17,6 +17,8 @@
 #include <unistd.h>
 #include <signal.h>
 #include <string.h>
+#include <sys/mman.h>
+#include <semaphore.h>
 
 /* -----  FILE DESCRIPTOR FUNCTIONS  ----- */
 

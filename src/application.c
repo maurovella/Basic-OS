@@ -45,6 +45,10 @@ int main (int argc, char * argv[]) {
 
     // Backup original set
     fd_read_set[BACKUP] = fd_read_set[ORIGINAL];
+
+    // In case a shared memory or semaphore already exists with said name we unlink them
+    shm_unlink(SHM_NAME);
+    sem_unlink(SEM_NAME);
     
     // Creating shared memory and semaphore 
     shm_info shm;
@@ -192,5 +196,5 @@ char * validate_token(char * buf) {
         exit(ERR_INVALID_ANSWER);
     }
     return token;
- }
+}
  
