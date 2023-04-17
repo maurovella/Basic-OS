@@ -24,9 +24,8 @@ Error Code: "ERR_ACTION"
 * utils folder includes utility functions of files and file descriptors manipulations, shared memory and semaphore mechanisms
 * include folder includes errors.h and the manager.h library with all the useful functions included in the utils folder to code application, slave, and vista
 
-## application.c
- (...)
-## slave.c
- (...)
-## vista.c
- (...)
+# Requirements
+
+# Compilation Instructions
+
+# Ejecution Instructions
