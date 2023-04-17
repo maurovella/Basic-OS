@@ -1,5 +1,3 @@
-// This is a personal academic project. Dear PVS-Studio, please check it.
-// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 #include "include/manager.h"
 #include <errno.h>
 
@@ -10,22 +8,24 @@ typedef struct slave_info {
     int files_solved;    // Amount of files solved by the slave
 } slave_info;
 
-void validate_args(int argc, int cant_files);
+void validate_args(int argc, int q_files);
+
+char * validate_token(char * buf);
 
 int main (int argc, char * argv[]) {
-    int cant_files = 0;
+    int q_files = 0;
     char * files[argc];
 
     // i initial value = 1 because first argument is path
     for (int i = 1; i < argc; i++) {
         if (is_file(argv[i])) {
-            files[cant_files++] = argv[i];
+            files[q_files++] = argv[i];
         }
     }
 
-    validate_args(argc, cant_files);
+    validate_args(argc, q_files);
 
-    int number_slaves = MIN(SLAVES_FROM_FILES(cant_files), MAX_SLAVES);
+    int number_slaves = MIN(SLAVES_FROM_FILES(q_files), MAX_SLAVES);
     slave_info slaves[number_slaves];
 
     FILE * output = create_file("respuesta.txt", "w");
@@ -76,7 +76,6 @@ int main (int argc, char * argv[]) {
 
     if (last_pid == 0) {
         // Child process
-
         // Closing unused pipes
         for (int i = 0; i < number_slaves; i++) {
             if (i != current_slave - 1) {
@@ -87,11 +86,10 @@ int main (int argc, char * argv[]) {
             }
         }
 
-        slave(slaves[current_slave - 1].app_to_slave, slaves[current_slave - 1].slave_to_app);
-        
+        slave(slaves[current_slave - 1].app_to_slave, slaves[current_slave - 1].slave_to_app);  
+
     } else {
         // Parent process
-
         char ans[MAX_LEN] = {0};
         md5_info result;
         int current_file = 0, files_read = 0;
@@ -104,12 +102,11 @@ int main (int argc, char * argv[]) {
             close_fd(slaves[i].app_to_slave[READ]);
             close_fd(slaves[i].slave_to_app[WRITE]);
         }
-        
-        // Distribution of INITIAL_FILES_PER_SLAVE  files per slave
-        // Initial distribution = number_slaves * INITIAL_FILES_PER_SLAVE 
-        for (int current_slave = 0; current_file < number_slaves * INITIAL_FILES_PER_SLAVE; current_slave++) {
-            for (int i = 0; i < INITIAL_FILES_PER_SLAVE && current_file < cant_files; i++) {
 
+        // Distribution of INITIAL_FILES_PER_SLAVE 
+        // Initial distribution = number_slaves * INITIAL_FILES_PER_SLAVE 
+        for (int current_slave = 0; current_file < number_slaves * INITIAL_FILES_PER_SLAVE && current_file < q_files; current_slave++) {
+            for (int i = 0; i < INITIAL_FILES_PER_SLAVE && current_file < q_files; i++) {
                 // Writing the file's name to the pipe
                 write_fd(slaves[current_slave].app_to_slave[WRITE], &(files[current_file]), sizeof(char *));
                 current_file++;
@@ -118,8 +115,7 @@ int main (int argc, char * argv[]) {
         }
         
         // Reading results
-        while (files_read < cant_files) {
-            
+        while (files_read < q_files) {
             // Wait for a slave to finish with select_fd
             select_fd(FD_SETSIZE, &(fd_read_set[ORIGINAL]), NULL, NULL, NULL);
             for (int i = 0; i < number_slaves; i++) {
@@ -131,10 +127,10 @@ int main (int argc, char * argv[]) {
                     slaves[i].files_solved++;
 
                     // Filling md5_info fields
-                    strcpy(result.hash, strtok(ans, " "));
-                    strcpy(result.file_name, strtok(NULL, " "));
+                    strcpy(result.hash, validate_token(ans));
+                    strcpy(result.file_name, validate_token(NULL));
                     result.pid = slaves[i].pid;
-                    result.files_left = cant_files - files_read;
+                    result.files_left = q_files - files_read;
 
                     // Writing result to the shared memory
                     write_shm(shm.fd, &result, sizeof(md5_info), files_read);
@@ -145,7 +141,7 @@ int main (int argc, char * argv[]) {
 
                     // Distribution of remaining files
                     // Only give files to a slave once it has finished its initial distribution
-                    if (current_file < cant_files && slaves[i].files_solved >= INITIAL_FILES_PER_SLAVE) {
+                    if (current_file < q_files && slaves[i].files_solved >= INITIAL_FILES_PER_SLAVE) {
                         write_fd(slaves[i].app_to_slave[WRITE], &(files[current_file]), sizeof(char *));
                         current_file++;
                     }
@@ -161,22 +157,18 @@ int main (int argc, char * argv[]) {
 
         // Closing remaining pipes and killing all slave processes
         for (int i = 0; i < number_slaves; i++) {
-
             close_fd(slaves[i].app_to_slave[WRITE]);
             close_fd(slaves[i].slave_to_app[READ]);
             kill_slave(slaves[i].pid);
-            
         }
     }
 
     // Closing shared memory, semaphore and output file
     close_shm(&shm);
 
-    // Waiting for vista process to finish reading
-    // If there is no vista process, continue
-    wait_sem(&reading_sem);
+    // No need to wait for vista process, when closing the pipes
+    // the processes will receive a read error and release their resources 
     close_sem(&reading_sem);
-    
     close_file(output);
 
     unlink_shm(&shm);
@@ -185,10 +177,20 @@ int main (int argc, char * argv[]) {
     return 0;
 }
 
-void validate_args(int argc, int cant_files) {
-    if (argc <= 1 || cant_files == 0){
+void validate_args(int argc, int q_files) {
+    if (argc <= 1 || q_files == 0){
         errno = ENOENT;
         perror("No files found.");
         exit(ERR_NO_FILES_FOUND); 
     }
 }
+
+char * validate_token(char * buf) {
+    char * token;
+    if ((token = strtok(buf, " ")) == NULL) {
+        perror("Invalid answer from slave");
+        exit(ERR_INVALID_ANSWER);
+    }
+    return token;
+ }
+ 
