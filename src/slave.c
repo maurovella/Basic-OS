@@ -49,7 +49,7 @@ int slave (int * app_to_slave, int * slave_to_app) {
     sub_slave.sets_fd[BACKUP] = sub_slave.sets_fd[ORIGINAL];
 
     while (!finished) {
-
+        
         // Wait for sub_slave to finish with select_fd
         select_fd(FD_SETSIZE, &(app_to_slave_set[ORIGINAL]), NULL, NULL, NULL);
 
@@ -61,12 +61,10 @@ int slave (int * app_to_slave, int * slave_to_app) {
 
         if (create_slave() == 0) {
             // Sub_slave process
-
             args[1] = file_name;
             execvp("md5sum", args);
         } else {
             // Slave process
-
             // md5sum result = MD5 + 1 (" ") + strlen(file_name) + 1 (\0)
             int result_len = MD5_SIZE + 1 + strlen(file_name) + 1;
 
