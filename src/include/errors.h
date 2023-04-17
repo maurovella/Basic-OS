@@ -13,23 +13,28 @@
 #define ERR_CREATING_FILE    8
 #define ERR_CLOSE_FILE       9
 
-#define ERR_CREATING_SHM     10
-#define ERR_MAPPING_SHM      11
-#define ERR_TRUNCATING_SHM   12
-#define ERR_OPENING_SHM      13
-#define ERR_WRITING_SHM      14
-#define ERR_UNMAPPING_SHM    15
-#define ERR_CLOSING_SHM      16
-#define ERR_UNLINKING_SHM    17
+#define ERR_INVALID_LENGTH   10
 
-#define ERR_CREATING_SEM     18
-#define ERR_OPENING_SEM      19
-#define ERR_POSTING_SEM      20
-#define ERR_WAITING_SEM      21
-#define ERR_CLOSING_SEM      22
-#define ERR_UNLINKING_SEM    23
+#define ERR_CREATING_SHM     11
+#define ERR_MAPPING_SHM      12
+#define ERR_TRUNCATING_SHM   13
+#define ERR_OPENING_SHM      14
+#define ERR_WRITING_SHM      15
+#define ERR_UNMAPPING_SHM    16
+#define ERR_CLOSING_SHM      17
+#define ERR_UNLINKING_SHM    18
 
-#define ERR_CREATING_SLAVE   24
-#define ERR_KILLING_PROCESS  25
+#define ERR_CREATING_SEM     19
+#define ERR_OPENING_SEM      20
+#define ERR_POSTING_SEM      21
+#define ERR_WAITING_SEM      22
+#define ERR_CLOSING_SEM      23
+#define ERR_UNLINKING_SEM    24
+
+#define ERR_CREATING_SLAVE   25
+#define ERR_KILLING_PROCESS  26
+
+#define ERR_INVALID_ANSWER   27
+#define ERR_INVALID_ARGS_RECEIVED 28
 
 #endif

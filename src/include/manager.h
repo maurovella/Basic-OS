@@ -384,4 +384,5 @@ void kill_slave(pid_t pid);
 
 */
 int slave (int * app_to_slave, int * slave_to_app);
+
 #endif

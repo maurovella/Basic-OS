@@ -8,7 +8,8 @@
 #define ORIGINAL 0
 #define BACKUP 1
 #define INITIAL_FILES_PER_SLAVE 3
-#define SLAVES_FROM_FILES(cant_files) (((cant_files) / (INITIAL_FILES_PER_SLAVE * 3)) + 1)
+#define SLAVES_FROM_FILES_FACTOR 9
+#define SLAVES_FROM_FILES(cant_files) (((cant_files) / SLAVES_FROM_FILES_FACTOR) + 1)
 #define MAX_SLAVES 50
 #define MAX_LEN 256
 #define MIN(a, b) ((a) <= (b) ? (a) : (b))
