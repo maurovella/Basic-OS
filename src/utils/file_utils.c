@@ -1,3 +1,5 @@
+// This is a personal academic project. Dear PVS-Studio, please check it.
+// PVS-Studio Static Code Analyzer for C, C++ and C#: http://www.viva64.com
 #include "./../include/manager.h"
 
 FILE * create_file (char * file_name, char * mode) {
@@ -5,7 +7,7 @@ FILE * create_file (char * file_name, char * mode) {
     FILE * f = fopen(file_name, mode);
     
     if (f == NULL) {
-        perror("Error creating file.");
+        perror("Error creating file");
         exit(ERR_CREATING_FILE); 
     }
     
@@ -20,7 +22,7 @@ int is_file (char * path) {
 
 void close_file (FILE * file) {
     if (fclose(file) == -1) {
-        perror("Error closing file.");
+        perror("Error closing file");
         exit(ERR_CLOSE_FILE);
     }
 }
